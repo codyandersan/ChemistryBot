@@ -25,6 +25,7 @@ html, body {
   margin: 0;
   padding: 0;
   overflow: hidden;
+  overflow-x: hidden;
 }
 
 body {
@@ -140,6 +141,7 @@ header {
   font-size: 15px;
   line-height: 1.5;
   word-wrap: break-word;
+  overflow-x: hidden;
   border: 1px solid transparent;
 }
 
@@ -194,6 +196,18 @@ header {
 .message pre code {
   background: none;
   padding: 0;
+}
+
+.message .katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  max-width: 100%;
+  padding: 2px 0 6px;
+  margin: 4px 0;
+}
+
+.message .katex {
+  white-space: normal;
 }
 
 .typing {
