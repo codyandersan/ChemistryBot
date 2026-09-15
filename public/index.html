@@ -5,34 +5,72 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>ChemBot</title>
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
 </head>
 <body>
   <div id="app">
     <header>
-      <div class="header-title">
-        <span class="app-name">ChemBot</span>
-        <span class="app-subtitle">Class 12 Chemistry</span>
-      </div>
-      <span class="status-dot" id="status-dot" title="Online"></span>
+      <span class="app-name">ChemBot</span>
+      <button id="menu-btn" aria-label="Menu">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <line x1="3" y1="12" x2="21" y2="12"></line>
+          <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+      </button>
+      <nav id="menu-dropdown" class="hidden">
+        <button class="menu-item" data-view="chat">Chat</button>
+        <button class="menu-item" data-view="about">About</button>
+      </nav>
     </header>
 
-    <main id="chat-container">
-      <div id="messages">
-        <div class="day-divider"><span>Today</span></div>
+    <main id="chat-view">
+      <div id="chat-container">
+        <div id="messages">
+          <div class="message assistant">Hi, I'm ChemBot. I can explain NCERT chemistry concepts (Classes 9 to 12), and for numericals I give hints and point out mistakes rather than just handing over the final answer. Ask me anything you're stuck on.</div>
+        </div>
       </div>
+
+      <footer>
+        <div class="input-wrapper">
+          <textarea id="user-input" placeholder="Ask a chemistry question…" rows="1"></textarea>
+          <button id="send-btn" aria-label="Send">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="22" y1="2" x2="11" y2="13"></line>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+            </svg>
+          </button>
+        </div>
+      </footer>
     </main>
 
-    <footer>
-      <div class="input-wrapper">
-        <textarea id="user-input" placeholder="Ask a chemistry question…" rows="1"></textarea>
-        <button id="send-btn" aria-label="Send">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="22" y1="2" x2="11" y2="13"></line>
-            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-          </svg>
-        </button>
+    <main id="about-view" class="hidden">
+      <div class="about-content">
+        <h2>About ChemBot</h2>
+        <p>This project is built as an exhibition of how AI can be integrated with class 12 chemistry study.</p>
+
+        <h3>Why this over ChatGPT or Gemini directly?</h3>
+        <ul>
+          <li><strong>Hints, not handouts.</strong> For numerical problems, ChemBot points you toward the right concept and flags where you've gone wrong, instead of just giving you the final number to copy.</li>
+          <li><strong>Scoped to your syllabus.</strong> It only draws from the NCERT chemistry syllabus across Classes 9–12, so answers stay exam-relevant instead of wandering into unrelated territory a general-purpose chatbot might bring in.</li>
+          <li><strong>One job, no clutter.</strong> No sign-up, no unrelated features — just a focused space for chemistry doubts.</li>
+          <li><strong>Built by a student, for students.</strong> Made specifically around how CBSE students actually get stuck, not as a general-purpose assistant.</li>
+        </ul>
+
+        <h3>Credits</h3>
+        <p>A team of Class XII A1 including:</p>
+        <ul class="credits-list">
+          <li>Gyan Maurya</li>
+          <li>Prakhar Aditya Tripathi — <a href="https://prakhartri.me" target="_blank" rel="noopener">prakhartri.me</a></li>
+          <li>Devanshu Raj</li>
+          <li>Avneesh Babu Singh</li>
+        </ul>
       </div>
-    </footer>
+    </main>
   </div>
 
   <script src="chat.js"></script>

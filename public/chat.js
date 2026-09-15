@@ -1,9 +1,38 @@
 const messagesEl = document.getElementById('messages');
 const inputEl = document.getElementById('user-input');
 const sendBtn = document.getElementById('send-btn');
+const menuBtn = document.getElementById('menu-btn');
+const menuDropdown = document.getElementById('menu-dropdown');
+const chatView = document.getElementById('chat-view');
+const aboutView = document.getElementById('about-view');
 
 let history = [];
 
+// ---- Menu / view switching ----
+menuBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  menuDropdown.classList.toggle('hidden');
+});
+
+document.addEventListener('click', () => {
+  menuDropdown.classList.add('hidden');
+});
+
+menuDropdown.querySelectorAll('.menu-item').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    const view = btn.dataset.view;
+    if (view === 'chat') {
+      chatView.classList.remove('hidden');
+      aboutView.classList.add('hidden');
+    } else {
+      chatView.classList.add('hidden');
+      aboutView.classList.remove('hidden');
+    }
+    menuDropdown.classList.add('hidden');
+  });
+});
+
+// ---- Input handling ----
 inputEl.addEventListener('input', () => {
   inputEl.style.height = 'auto';
   inputEl.style.height = Math.min(inputEl.scrollHeight, 120) + 'px';
@@ -32,7 +61,7 @@ async function sendMessage() {
   thinkingEl.className = 'typing';
   thinkingEl.innerHTML = '<span></span><span></span><span></span>';
   messagesEl.appendChild(thinkingEl);
-  messagesEl.scrollTop = messagesEl.scrollHeight;
+  scrollToBottom();
 
   try {
     const response = await fetch('/api/chat', {
@@ -49,7 +78,7 @@ async function sendMessage() {
     }
 
     appendMessage(data.reply, 'assistant');
-    
+
     // Update history for Gemini (roles must be 'user' or 'model')
     history.push({ role: 'user', parts: [{ text }] });
     history.push({ role: 'model', parts: [{ text: data.reply }] });
@@ -66,13 +95,29 @@ async function sendMessage() {
 function appendMessage(text, type) {
   const div = document.createElement('div');
   div.className = `message ${type}`;
-  
-  // Basic markdown parsing for inline code and line breaks
-  const formattedText = text
-    .replace(/`([^`]+)`/g, '<code>$1</code>')
-    .replace(/\n/g, '<br>');
-    
-  div.innerHTML = formattedText;
+
+  const rawHtml = marked.parse(text, { breaks: true });
+  div.innerHTML = DOMPurify.sanitize(rawHtml);
+
   messagesEl.appendChild(div);
-  messagesEl.scrollTop = messagesEl.scrollHeight;
+
+  // Typeset any LaTeX math in the message ($...$, $$...$$, \(...\), \[...\])
+  if (window.renderMathInElement) {
+    renderMathInElement(div, {
+      delimiters: [
+        { left: '$$', right: '$$', display: true },
+        { left: '\\[', right: '\\]', display: true },
+        { left: '$', right: '$', display: false },
+        { left: '\\(', right: '\\)', display: false }
+      ],
+      throwOnError: false
+    });
+  }
+
+  scrollToBottom();
+}
+
+function scrollToBottom() {
+  const container = document.getElementById('chat-container');
+  container.scrollTop = container.scrollHeight;
 }
