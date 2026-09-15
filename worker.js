@@ -34,8 +34,21 @@ export default {
         const userMessage = body.message;
         const history = body.history || [];
 
-        // Diagnostic only — confirms the secret reached the Worker without ever logging its value
-        console.log('GEMINI_API_KEY present:', !!env.GEMINI_API_KEY, 'length:', env.GEMINI_API_KEY?.length || 0);
+        // Gather all 4 keys from Cloudflare secrets in priority order
+        const API_KEYS = [
+          env.GEMINI_API_KEY,
+          env.GEMINI_API_KEY_2,
+          env.GEMINI_API_KEY_3,
+          env.GEMINI_API_KEY_4
+        ].filter(k => typeof k === 'string' && k.trim().length > 0);
+
+        if (API_KEYS.length === 0) {
+          console.error('No GEMINI_API_KEY found in environment');
+          return new Response(JSON.stringify({ error: 'No API keys configured' }), {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' }
+          });
+        }
 
         const payload = {
           systemInstruction: {
@@ -47,8 +60,6 @@ export default {
           ]
         };
 
-        // Try models in order. If one is overloaded (503) or otherwise fails,
-        // fall through to the next one instead of showing an error to the student.
         const MODEL_FALLBACK_LIST = [
           'gemini-3.6-flash',
           'gemini-flash-latest',
@@ -58,37 +69,50 @@ export default {
         let replyText = null;
         let lastError = null;
 
-        for (const model of MODEL_FALLBACK_LIST) {
-          const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${env.GEMINI_API_KEY}`;
+        // Try Key 1 -> Key 2 -> Key 3 -> Key 4
+        keyLoop:
+        for (let keyIdx = 0; keyIdx < API_KEYS.length; keyIdx++) {
+          const currentKey = API_KEYS[keyIdx];
 
-          try {
-            const geminiRes = await fetch(geminiUrl, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(payload)
-            });
+          for (const model of MODEL_FALLBACK_LIST) {
+            const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${currentKey}`;
 
-            if (!geminiRes.ok) {
-              const errText = await geminiRes.text();
-              console.error(`Gemini API error (${model}):`, geminiRes.status, errText);
-              lastError = `${geminiRes.status}: ${errText}`;
-              continue; // try the next model in the list
+            try {
+              const geminiRes = await fetch(geminiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+              });
+
+              if (!geminiRes.ok) {
+                const errText = await geminiRes.text();
+                console.warn(`Key #${keyIdx + 1} (${model}) failed [${geminiRes.status}]: ${errText}`);
+                lastError = `${geminiRes.status}: ${errText}`;
+
+                // If quota exhausted (429), key blocked/invalid (403), or location error (400),
+                // skip remaining models on this key and jump straight to the next account's key.
+                if (geminiRes.status === 429 || geminiRes.status === 403 || (geminiRes.status === 400 && errText.includes('location'))) {
+                  break; 
+                }
+                continue;
+              }
+
+              const data = await geminiRes.json();
+              replyText = data.candidates?.[0]?.content?.parts?.[0]?.text || null;
+
+              if (replyText) {
+                // Success — exit both loops immediately
+                break keyLoop;
+              }
+            } catch (fetchErr) {
+              console.warn(`Fetch exception on Key #${keyIdx + 1} (${model}):`, fetchErr.message);
+              lastError = fetchErr.message;
             }
-
-            const data = await geminiRes.json();
-            replyText = data.candidates?.[0]?.content?.parts?.[0]?.text || null;
-
-            if (replyText) {
-              break; // success, stop trying further models
-            }
-          } catch (fetchErr) {
-            console.error(`Fetch failed for ${model}:`, fetchErr.message);
-            lastError = fetchErr.message;
           }
         }
 
         if (!replyText) {
-          console.error('All models failed. Last error:', lastError);
+          console.error('All keys and models failed. Last error:', lastError);
           return new Response(JSON.stringify({ error: 'Failed to contact AI model' }), { 
             status: 500,
             headers: { 'Content-Type': 'application/json' }
