@@ -2,25 +2,38 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ChemBot Class 12</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>ChemBot</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header>
-    <h1>ChemBot Class 12</h1>
-  </header>
-  
-  <main id="chat-container">
-    <div id="messages"></div>
-  </main>
-  
-  <footer>
-    <div class="input-wrapper">
-      <textarea id="user-input" placeholder="Ask a chemistry question..." rows="1"></textarea>
-      <button id="send-btn">Send</button>
-    </div>
-  </footer>
+  <div id="app">
+    <header>
+      <div class="header-title">
+        <span class="app-name">ChemBot</span>
+        <span class="app-subtitle">Class 12 Chemistry</span>
+      </div>
+      <span class="status-dot" id="status-dot" title="Online"></span>
+    </header>
+
+    <main id="chat-container">
+      <div id="messages">
+        <div class="day-divider"><span>Today</span></div>
+      </div>
+    </main>
+
+    <footer>
+      <div class="input-wrapper">
+        <textarea id="user-input" placeholder="Ask a chemistry question…" rows="1"></textarea>
+        <button id="send-btn" aria-label="Send">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13"></line>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+          </svg>
+        </button>
+      </div>
+    </footer>
+  </div>
 
   <script src="chat.js"></script>
 </body>

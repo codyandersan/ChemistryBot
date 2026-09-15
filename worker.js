@@ -33,28 +33,59 @@ export default {
           ]
         };
 
-        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${env.GEMINI_API_KEY}`;
-        
-        const geminiRes = await fetch(geminiUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
+        // Try models in order. If one is overloaded (503) or otherwise fails,
+        // fall through to the next one instead of showing an error to the student.
+        const MODEL_FALLBACK_LIST = [
+          'gemini-3.6-flash',
+          'gemini-flash-latest',
+          'gemini-3.1-flash-lite-preview'
+        ];
 
-        if (!geminiRes.ok) {
+        let replyText = null;
+        let lastError = null;
+
+        for (const model of MODEL_FALLBACK_LIST) {
+          const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${env.GEMINI_API_KEY}`;
+
+          try {
+            const geminiRes = await fetch(geminiUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            });
+
+            if (!geminiRes.ok) {
+              const errText = await geminiRes.text();
+              console.error(`Gemini API error (${model}):`, geminiRes.status, errText);
+              lastError = `${geminiRes.status}: ${errText}`;
+              continue; // try the next model in the list
+            }
+
+            const data = await geminiRes.json();
+            replyText = data.candidates?.[0]?.content?.parts?.[0]?.text || null;
+
+            if (replyText) {
+              break; // success, stop trying further models
+            }
+          } catch (fetchErr) {
+            console.error(`Fetch failed for ${model}:`, fetchErr.message);
+            lastError = fetchErr.message;
+          }
+        }
+
+        if (!replyText) {
+          console.error('All models failed. Last error:', lastError);
           return new Response(JSON.stringify({ error: 'Failed to contact AI model' }), { 
             status: 500,
             headers: { 'Content-Type': 'application/json' }
           });
         }
 
-        const data = await geminiRes.json();
-        const replyText = data.candidates?.[0]?.content?.parts?.[0]?.text || "No response generated.";
-
         return new Response(JSON.stringify({ reply: replyText }), {
           headers: { 'Content-Type': 'application/json' }
         });
       } catch (err) {
+        console.error('Worker exception:', err.message, err.stack);
         return new Response(JSON.stringify({ error: 'Internal server error' }), { 
           status: 500,
           headers: { 'Content-Type': 'application/json' }

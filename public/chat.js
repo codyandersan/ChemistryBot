@@ -29,8 +29,8 @@ async function sendMessage() {
   sendBtn.disabled = true;
 
   const thinkingEl = document.createElement('div');
-  thinkingEl.className = 'thinking';
-  thinkingEl.textContent = 'Thinking...';
+  thinkingEl.className = 'typing';
+  thinkingEl.innerHTML = '<span></span><span></span><span></span>';
   messagesEl.appendChild(thinkingEl);
   messagesEl.scrollTop = messagesEl.scrollHeight;
 
