@@ -8,6 +8,17 @@ const aboutView = document.getElementById('about-view');
 
 let history = [];
 
+// ---- Reliable full-height sizing on mobile (avoids gaps when the on-screen keyboard opens/closes) ----
+function setAppHeight() {
+  const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+  document.documentElement.style.setProperty('--app-height', `${vh}px`);
+}
+setAppHeight();
+window.addEventListener('resize', setAppHeight);
+if (window.visualViewport) {
+  window.visualViewport.addEventListener('resize', setAppHeight);
+}
+
 // ---- Menu / view switching ----
 menuBtn.addEventListener('click', (e) => {
   e.stopPropagation();
@@ -88,7 +99,6 @@ async function sendMessage() {
   } finally {
     inputEl.disabled = false;
     sendBtn.disabled = false;
-    inputEl.focus();
   }
 }
 
